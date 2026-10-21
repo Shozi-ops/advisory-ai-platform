@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Advisory AI Platform — Multi-Agent Orchestrator</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#eef2ff',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
+              900: '#312e81',
+            },
+            dark: {
+              bg: '#0f172a',
+              card: '#1e293b',
+              border: '#334155'
+            }
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-dark-bg text-slate-100 min-h-screen font-sans antialiased">
+
+  <!-- Navigation Bar -->
+  <header class="border-b border-dark-border bg-slate-900/80 backdrop-blur sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-indigo-400 flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-brand-500/30">
+          <i class="fa-solid fa-brain"></i>
+        </div>
+        <div>
+          <h1 class="font-bold text-lg leading-tight">Advisory AI Platform</h1>
+          <p class="text-xs text-slate-400">Multi-Agent Advisory Board powered by Gemini 2.5 Flash</p>
+        </div>
+      </div>
+
+      <!-- Mode Toggle Switch -->
+      <div class="flex items-center bg-slate-800 p-1 rounded-lg border border-slate-700">
+        <button id="modeSimBtn" onclick="setMode('sim')" class="px-3 py-1.5 text-xs font-medium rounded-md transition-all bg-brand-600 text-white shadow">
+          <i class="fa-solid fa-flask mr-1"></i> Demo Simulation
+        </button>
+        <button id="modeLiveBtn" onclick="setMode('live')" class="px-3 py-1.5 text-xs font-medium rounded-md transition-all text-slate-400 hover:text-slate-200">
+          <i class="fa-solid fa-bolt mr-1"></i> Live FastAPI Backend
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="max-w-7xl mx-auto px-4 py-6 space-y-6">
+
+    <!-- Scenario Presets & Query Input -->
+    <section class="bg-dark-card border border-dark-border rounded-2xl p-6 shadow-xl">
+      <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+        <h2 class="text-sm font-semibold uppercase tracking-wider text-slate-400">
+          <i class="fa-solid fa-wand-magic-sparkles mr-2 text-brand-500"></i>Select Preset Scenario or Enter Query
+        </h2>
+        <div class="flex gap-2">
+          <button onclick="loadPreset('saas')" class="text-xs bg-slate-800 hover:bg-slate-700 border border-slate-700 px-3 py-1.5 rounded-lg text-slate-300 transition">
+            🚀 Launch SaaS
+          </button>
+          <button onclick="loadPreset('contract')" class="text-xs bg-slate-800 hover:bg-slate-700 border border-slate-700 px-3 py-1.5 rounded-lg text-slate-300 transition">
+            📑 Contract Audit
+          </button>
+          <button onclick="loadPreset('scale')" class="text-xs bg-slate-800 hover:bg-slate-700 border border-slate-700 px-3 py-1.5 rounded-lg text-slate-300 transition">
+            📈 E-Commerce Scale
+          </button>
+        </div>
+      </div>
+
+      <div class="space-y-4">
+        <textarea id="queryInput" rows="3" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-4 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500 transition resize-none" placeholder="Describe your business or personal challenge in detail..."></textarea>
+
+        <div class="flex items-center justify-between">
+          <div class="text-xs text-slate-500 flex items-center gap-2">
+            <span id="endpointStatusBadge" class="inline-flex items-center gap-1 text-emerald-400 bg-emerald-950/50 border border-emerald-800 px-2 py-0.5 rounded-full">
+              <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Mode: Simulation Mode
+            </span>
+          </div>
+
+          <button id="submitBtn" onclick="runOrchestration()" class="bg-gradient-to-r from-brand-600 to-indigo-600 hover:from-brand-500 hover:to-indigo-500 text-white font-semibold text-sm px-6 py-2.5 rounded-xl shadow-lg shadow-brand-600/30 transition flex items-center gap-2">
+            <i class="fa-solid fa-paper-plane"></i> Assemble Advisory Board
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Orchestrator Progress & Status Bar -->
+    <section id="orchestratorStatusCard" class="bg-dark-card border border-dark-border rounded-2xl p-5 shadow-xl hidden">
+      <div class="flex items-center justify-between mb-3">
+        <div class="flex items-center gap-3">
+          <div class="w-3 h-3 rounded-full bg-brand-500 animate-ping"></div>
+          <span id="statusMessage" class="text-sm font-semibold text-slate-200">Initializing Router Agent...</span>
+        </div>
+        <span id="strategyBadge" class="text-xs px-2.5 py-1 rounded-md font-mono bg-slate-800 border border-slate-700 text-brand-400">
+          STRATEGY: PENDING
+        </span>
+      </div>
+
+      <div class="w-full bg-slate-900 h-2 rounded-full overflow-hidden border border-slate-800">
+        <div id="progressBar" class="bg-gradient-to-r from-brand-500 to-indigo-400 h-full w-0 transition-all duration-500"></div>
+      </div>
+    </section>
+
+    <!-- Agent Grid (6 Specialist Cards) -->
+    <section>
+      <h2 class="text-sm font-semibold uppercase tracking-wider text-slate-400 mb-4 flex items-center justify-between">
+        <span><i class="fa-solid fa-users-gear mr-2 text-brand-500"></i>Specialist Agent Execution Board</span>
+        <span id="agentsCompletedCount" class="text-xs text-slate-500">0/6 Agents Active</span>
+      </h2>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="agentGrid">
+        <!-- Financial Agent -->
+        <div id="card-FINANCIAL_STRATEGY" class="agent-card bg-dark-card border border-dark-border rounded-2xl p-5 transition-all opacity-50">
+          <div class="flex items-center justify-between mb-3">
+            <div class="flex items-center gap-2.5">
+              <div class="w-8 h-8 rounded-lg bg-emerald-950/80 border border-emerald-700 text-emerald-400 flex items-center justify-center">
+                <i class="fa-solid fa-chart-line"></i>
+              </div>
+              <div>
+                <h3 class="font-bold text-sm">Financial Strategy</h3>
+                <p class="text-[10px] text-slate-400">Virtual CFO & Wealth Advisor</p>
+              </div>
+            </div>
+            <span class="badge text-[10px] px-2 py-0.5 rounded font-mono bg-slate-800 text-slate-400 border border-slate-700">IDLE</span>
+          </div>
+          <div class="task-desc text-xs text-slate-400 mb-3 italic hidden border-l-2 border-slate-700 pl-2"></div>
+          <div class="agent-output text-xs text-slate-300 space-y-2 max-h-48 overflow-y-auto pr-1">Awaiting dispatch...</div>
+        </div>
+
+        <!-- Legal Sentinel -->
+        <div id="card-LEGAL_SENTINEL" class="agent-card bg-dark-card border border-dark-border rounded-2xl p-5 transition-all opacity-50">
+          <div class="flex items-center justify-between mb-3">
+            <div class="flex items-center gap-2.5">
+              <div class="w-8 h-8 rounded-lg bg-amber-950/80 border border-amber-700 text-amber-400 flex items-center justify-center">
+                <i class="fa-solid fa-scale-balanced"></i>
+              </div>
+              <div>
+                <h3 class="font-bold text-sm">Legal Sentinel</h3>
+                <p class="text-[10px] text-slate-400">Contract & Risk Auditor</p>
+              </div>
+            </div>
+            <span class="badge text-[10px] px-2 py-0.5 rounded font-mono bg-slate-800 text-slate-400 border border-slate-700">IDLE</span>
+          </div>
+          <div class="task-desc text-xs text-slate-400 mb-3 italic hidden border-l-2 border-slate-700 pl-2"></div>
+          <div class="agent-output text-xs text-slate-300 space-y-2 max-h-48 overflow-y-auto pr-1">Awaiting dispatch...</div>
+        </div>
+
+        <!-- Operations COO -->
+        <div id="card-OPERATIONS_COO" class="agent-card bg-dark-card border border-dark-border rounded-2xl p-5 transition-all opacity-50">
+          <div class="flex items-center justify-between mb-3">
+            <div class="flex items-center gap-2.5">
+              <div class="w-8 h-8 rounded-lg bg-blue-950/80 border border-blue-700 text-blue-400 flex items-center justify-center">
+                <i class="fa-solid fa-gears"></i>
+              </div>
+              <div>
+                <h3 class="font-bold text-sm">Operations COO</h3>
+                <p class="text-[10px] text-slate-400">SOP & RACI Architect</p>
+              </div>
+            </div>
+            <span class="badge text-[10px] px-2 py-0.5 rounded font-mono bg-slate-800 text-slate-400 border border-slate-700">IDLE</span>
+          </div>
+          <div class="task-desc text-xs text-slate-400 mb-3 italic hidden border-l-2 border-slate-700 pl-2"></div>
+          <div class="agent-output text-xs text-slate-300 space-y-2 max-h-48 overflow-y-auto pr-1">Awaiting dispatch...</div>
+        </div>
+
+        <!-- Market Intelligence -->
+        <div id="card-MARKET_INTELLIGENCE" class="agent-card bg-dark-card border border-dark-border rounded-2xl p-5 transition-all opacity-50">
+          <div class="flex items-center justify-between mb-3">
+            <div class="flex items-center gap-2.5">
+              <div class="w-8 h-8 rounded-lg bg-purple-950/80 border border-purple-700 text-purple-400 flex items-center justify-center">
+                <i class="fa-solid fa-magnifying-glass-chart"></i>
+              </div>
+              <div>
+                <h3 class="font-bold text-sm">Market Intelligence</h3>
+                <p class="text-[10px] text-slate-400">Competitive Analyst & GTM</p>
+              </div>
+            </div>
+            <span class="badge text-[10px] px-2 py-0.5 rounded font-mono bg-slate-800 text-slate-400 border border-slate-700">IDLE</span>
+          </div>
+          <div class="task-desc text-xs text-slate-400 mb-3 italic hidden border-l-2 border-slate-700 pl-2"></div>
+          <div class="agent-output text-xs text-slate-300 space-y-2 max-h-48 overflow-y-auto pr-1">Awaiting dispatch...</div>
+        </div>
+
+        <!-- Risk Red Teamer -->
+        <div id="card-RISK_RED_TEAMER" class="agent-card bg-dark-card border border-dark-border rounded-2xl p-5 transition-all opacity-50">
+          <div class="flex items-center justify-between mb-3">
+            <div class="flex items-center gap-2.5">
+              <div class="w-8 h-8 rounded-lg bg-rose-950/80 border border-rose-700 text-rose-400 flex items-center justify-center">
+                <i class="fa-solid fa-shield-halved"></i>
+              </div>
+              <div>
+                <h3 class="font-bold text-sm">Risk Red Teamer</h3>
+                <p class="text-[10px] text-slate-400">Pre-Mortem & Stress Tester</p>
+              </div>
+            </div>
+            <span class="badge text-[10px] px-2 py-0.5 rounded font-mono bg-slate-800 text-slate-400 border border-slate-700">IDLE</span>
+          </div>
+          <div class="task-desc text-xs text-slate-400 mb-3 italic hidden border-l-2 border-slate-700 pl-2"></div>
+          <div class="agent-output text-xs text-slate-300 space-y-2 max-h-48 overflow-y-auto pr-1">Awaiting dispatch...</div>
+        </div>
+
+        <!-- Brand Copywriter -->
+        <div id="card-BRAND_COPYWRITER" class="agent-card bg-dark-card border border-dark-border rounded-2xl p-5 transition-all opacity-50">
+          <div class="flex items-center justify-between mb-3">
+            <div class="flex items-center gap-2.5">
+              <div class="w-8 h-8 rounded-lg bg-cyan-950/80 border border-cyan-700 text-cyan-400 flex items-center justify-center">
+                <i class="fa-solid fa-pen-nib"></i>
+              </div>
+              <div>
+                <h3 class="font-bold text-sm">Brand Copywriter</h3>
+                <p class="text-[10px] text-slate-400">Positioning & Conversion Copy</p>
+              </div>
+            </div>
+            <span class="badge text-[10px] px-2 py-0.5 rounded font-mono bg-slate-800 text-slate-400 border border-slate-700">IDLE</span>
+          </div>
+          <div class="task-desc text-xs text-slate-400 mb-3 italic hidden border-l-2 border-slate-700 pl-2"></div>
+          <div class="agent-output text-xs text-slate-300 space-y-2 max-h-48 overflow-y-auto pr-1">Awaiting dispatch...</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Final Synthesis Deliverable -->
+    <section id="synthesisSection" class="bg-dark-card border border-dark-border rounded-2xl p-6 shadow-xl hidden">
+      <div class="flex items-center justify-between border-b border-dark-border pb-4 mb-4">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-emerald-600/20 text-emerald-400 border border-emerald-600/30 flex items-center justify-center font-bold text-lg">
+            <i class="fa-solid fa-file-contract"></i>
+          </div>
+          <div>
+            <h2 class="font-bold text-base text-slate-100">Master Advisory Synthesis Deliverable</h2>
+            <p id="synthesisFormatBadge" class="text-xs text-slate-400">FORMAT: EXECUTIVE SUMMARY</p>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <button onclick="copySynthesisText()" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 px-3 py-1.5 rounded-lg transition flex items-center gap-1.5">
+            <i class="fa-regular fa-copy"></i> Copy
+          </button>
+          <button onclick="downloadReport()" class="text-xs bg-brand-600 hover:bg-brand-500 text-white font-medium px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 shadow">
+            <i class="fa-solid fa-download"></i> Download Report (.md)
+          </button>
+        </div>
+      </div>
+
+      <div id="synthesisContent" class="prose prose-invert max-w-none text-sm text-slate-300 space-y-4"></div>
+    </section>
+
+  </main>
+
+  <script>
+    let currentMode = 'sim';
+    let rawSynthesisMarkdown = '';
+
+    const PRESETS = {
+      saas: "How do I launch a B2B AI SaaS platform targeting law firms in South Africa while ensuring POPIA compliance, optimal tax structuring, and high-converting cold outreach?",
+      contract: "Please audit this freelance service agreement: The contractor agrees to indemnify the client indefinitely for any loss of profits, work strictly 60 hours per week, and accept payment 90 days post-invoice.",
+      scale: "We are an e-commerce brand generating $50k MRR. How do we reduce supply chain risk, decrease cart abandonment by 15%, and scale Facebook ad spend profitably?"
+    };
+
+    function setMode(mode) {
+      currentMode = mode;
+      const simBtn = document.getElementById('modeSimBtn');
+      const liveBtn = document.getElementById('modeLiveBtn');
+      const badge = document.getElementById('endpointStatusBadge');
+
+      if (mode === 'sim') {
+        simBtn.className = "px-3 py-1.5 text-xs font-medium rounded-md transition-all bg-brand-600 text-white shadow";
+        liveBtn.className = "px-3 py-1.5 text-xs font-medium rounded-md transition-all text-slate-400 hover:text-slate-200";
+        badge.innerHTML = '<span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Mode: Simulation Mode';
+        badge.className = "inline-flex items-center gap-1 text-emerald-400 bg-emerald-950/50 border border-emerald-800 px-2 py-0.5 rounded-full";
+      } else {
+        liveBtn.className = "px-3 py-1.5 text-xs font-medium rounded-md transition-all bg-brand-600 text-white shadow";
+        simBtn.className = "px-3 py-1.5 text-xs font-medium rounded-md transition-all text-slate-400 hover:text-slate-200";
+        badge.innerHTML = '<span class="w-2 h-2 rounded-full bg-indigo-400 animate-pulse"></span> Mode: Live FastAPI (http://localhost:8000)';
+        badge.className = "inline-flex items-center gap-1 text-indigo-400 bg-indigo-950/50 border border-indigo-800 px-2 py-0.5 rounded-full";
+      }
+    }
+
+    function loadPreset(key) {
+      document.getElementById('queryInput').value = PRESETS[key] || '';
+    }
+
+    function resetBoard() {
+      document.getElementById('orchestratorStatusCard').classList.remove('hidden');
+      document.getElementById('synthesisSection').classList.add('hidden');
+      document.getElementById('progressBar').style.width = '10%';
+      document.getElementById('statusMessage').innerText = 'Analyzing user request & invoking Router Agent...';
+      document.getElementById('strategyBadge').innerText = 'STRATEGY: ROUTING';
+
+      const agentIDs = ['FINANCIAL_STRATEGY', 'LEGAL_SENTINEL', 'OPERATIONS_COO', 'MARKET_INTELLIGENCE', 'RISK_RED_TEAMER', 'BRAND_COPYWRITER'];
+      agentIDs.forEach(id => {
+        const card = document.getElementById('card-' + id);
+        card.classList.add('opacity-50');
+        card.classList.remove('ring-2', 'ring-brand-500', 'ring-emerald-500');
+        card.querySelector('.badge').innerText = 'IDLE';
+        card.querySelector('.badge').className = 'badge text-[10px] px-2 py-0.5 rounded font-mono bg-slate-800 text-slate-400 border border-slate-700';
+        card.querySelector('.task-desc').classList.add('hidden');
+        card.querySelector('.agent-output').innerText = 'Awaiting dispatch...';
+      });
+      document.getElementById('agentsCompletedCount').innerText = '0/6 Active';
+    }
+
+    async function runOrchestration() {
+      const query = document.getElementById('queryInput').value.trim();
+      if (!query) return alert('Please enter a query or select a preset.');
+
+      resetBoard();
+
+      if (currentMode === 'sim') {
+        runSimulation(query);
+      } else {
+        runLiveStream(query);
+      }
+    }
+
+    function updateAgentCard(agentId, status, task, output) {
+      const card = document.getElementById('card-' + agentId);
+      if (!card) return;
+
+      card.classList.remove('opacity-50');
+      const badge = card.querySelector('.badge');
+      const desc = card.querySelector('.task-desc');
+      const out = card.querySelector('.agent-output');
+
+      if (task) {
+        desc.innerText = 'Task: ' + task;
+        desc.classList.remove('hidden');
+      }
+
+      if (status === 'ROUTED') {
+        badge.innerText = 'ROUTED';
+        badge.className = 'badge text-[10px] px-2 py-0.5 rounded font-mono bg-indigo-950 text-indigo-400 border border-indigo-700';
+        card.classList.add('ring-1', 'ring-indigo-500/50');
+      } else if (status === 'RUNNING') {
+        badge.innerText = 'RUNNING';
+        badge.className = 'badge text-[10px] px-2 py-0.5 rounded font-mono bg-amber-950 text-amber-400 border border-amber-700 animate-pulse';
+        out.innerText = 'Processing agent prompts...';
+      } else if (status === 'COMPLETED') {
+        badge.innerText = 'COMPLETED';
+        badge.className = 'badge text-[10px] px-2 py-0.5 rounded font-mono bg-emerald-950 text-emerald-400 border border-emerald-700';
+        card.classList.remove('ring-1', 'ring-indigo-500/50');
+        card.classList.add('ring-1', 'ring-emerald-500');
+        out.innerHTML = marked.parse(output || '');
+      }
+    }
+
+    async function runSimulation(query) {
+      await new Promise(r => setTimeout(r, 800));
+      document.getElementById('progressBar').style.width = '30%';
+      document.getElementById('statusMessage').innerText = 'Router identified 3 domain specialists. Executing in PARALLEL.';
+      document.getElementById('strategyBadge').innerText = 'STRATEGY: PARALLEL';
+
+      const tasks = [
+        { id: 'FINANCIAL_STRATEGY', task: 'Evaluate POPIA compliance costs & local corporate tax registration.' },
+        { id: 'LEGAL_SENTINEL', task: 'Audit data sovereignty & draft SaaS Terms of Service redlines.' },
+        { id: 'BRAND_COPYWRITER', task: 'Draft 3 B2B cold email variations targeting managing partners.' }
+      ];
+
+      tasks.forEach(t => updateAgentCard(t.id, 'ROUTED', t.task));
+
+      await new Promise(r => setTimeout(r, 1000));
+      document.getElementById('progressBar').style.width = '60%';
+
+      updateAgentCard('FINANCIAL_STRATEGY', 'COMPLETED', tasks[0].task, "### Financial Assessment\n- **Immediate Setup:** R12,000 corporate registration & tax filing setup.\n- **POPIA Audit Cost:** ~R25,000 one-time.\n\n*Disclaimer: Output generated for advisory modeling only.*");
+      document.getElementById('agentsCompletedCount').innerText = '1/3 Completed';
+
+      await new Promise(r => setTimeout(r, 900));
+      updateAgentCard('LEGAL_SENTINEL', 'COMPLETED', tasks[1].task, "### Legal & Compliance Review\n- **Threat Level:** [MODERATE RISK]\n- **Required Action:** Add explicit Data Processing Agreement (DPA) under Section 19 of POPIA.\n\n*Disclaimer: Not formal legal counsel.*");
+      document.getElementById('agentsCompletedCount').innerText = '2/3 Completed';
+
+      await new Promise(r => setTimeout(r, 800));
+      updateAgentCard('BRAND_COPYWRITER', 'COMPLETED', tasks[2].task, "### Outreach Copy Options\n1. **Direct Pitch:** 'Reduce contract review time by 70%...'\n2. **Value-First:** 'Free POPIA compliance checklist for law firms...'");
+      document.getElementById('agentsCompletedCount').innerText = '3/3 Completed';
+
+      document.getElementById('progressBar').style.width = '100%';
+      document.getElementById('statusMessage').innerText = 'Synthesis complete!';
+
+      showSynthesis("## Executive Advisory Deliverable\n\n### Key Action Steps\n1. **Register Entity & Tax Accounts:** Complete South African tax setup.\n2. **Incorporate DPA:** Ensure all legal agreements state POPIA compliance.\n3. **Launch Cold Email Sequence:** Deploy Option 2 (Value-First) for higher open rates.");
+    }
+
+    async function runLiveStream(query) {
+      try {
+        const response = await fetch("http://localhost:8000/api/v1/advisory/stream", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ query: query, model: "gemini-2.5-flash" })
+        });
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let completedCount = 0;
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          const chunk = decoder.decode(value);
+          const lines = chunk.split("\n\n");
+
+          for (const line of lines) {
+            if (line.startsWith("data: ")) {
+              const data = JSON.parse(line.replace("data: ", ""));
+              
+              if (data.step === "routing") {
+                document.getElementById('progressBar').style.width = '20%';
+                document.getElementById('statusMessage').innerText = data.message;
+              } else if (data.intent_summary) {
+                document.getElementById('strategyBadge').innerText = 'STRATEGY: ' + data.synthesis_strategy;
+                document.getElementById('progressBar').style.width = '40%';
+                data.execution_plan.forEach(task => {
+                  updateAgentCard(task.agent_id, 'ROUTED', task.task_description);
+                });
+              } else if (data.agent_id) {
+                completedCount++;
+                document.getElementById('agentsCompletedCount').innerText = completedCount + ' Active Completed';
+                updateAgentCard(data.agent_id, 'COMPLETED', data.task, data.output);
+                document.getElementById('progressBar').style.width = (40 + completedCount * 15) + '%';
+              } else if (data.content) {
+                document.getElementById('progressBar').style.width = '100%';
+                document.getElementById('statusMessage').innerText = 'Synthesis Complete!';
+                showSynthesis(data.content, data.format);
+              }
+            }
+          }
+        }
+      } catch (err) {
+        alert("Error connecting to live FastAPI server: " + err.message);
+      }
+    }
+
+    function showSynthesis(markdownText, format = 'EXECUTIVE SUMMARY') {
+      rawSynthesisMarkdown = markdownText;
+      const section = document.getElementById('synthesisSection');
+      section.classList.remove('hidden');
+      document.getElementById('synthesisFormatBadge').innerText = 'FORMAT: ' + format;
+      document.getElementById('synthesisContent').innerHTML = marked.parse(markdownText);
+      section.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function copySynthesisText() {
+      navigator.clipboard.writeText(rawSynthesisMarkdown);
+      alert('Report copied to clipboard!');
+    }
+
+    function downloadReport() {
+      const blob = new Blob([rawSynthesisMarkdown], { type: 'text/markdown' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'Advisory_AI_Report.md';
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+  </script>
+</body>
+</html>
